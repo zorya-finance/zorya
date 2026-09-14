@@ -1,0 +1,28 @@
+[package]
+name = "zorya"
+version = "0.1.0"
+description = "Zorya — fixed-income infrastructure on Solana"
+edition = "2021"
+license = "Apache-2.0"
+
+[lib]
+crate-type = ["cdylib", "lib"]
+name = "zorya"
+
+[features]
+default = ["mock-oracle"]
+mock-oracle = []
+cpi = ["no-entrypoint"]
+no-entrypoint = []
+no-idl = []
+no-log-ix-name = []
+idl-build = ["anchor-lang/idl-build", "anchor-spl/idl-build"]
+
+[dependencies]
+anchor-lang = { version = "0.31.1", features = ["init-if-needed"] }
+anchor-spl = "0.31.1"
+# Keep the SBF toolchain (rustc 1.79) off crates that require edition2024.
+solana-program = "=2.1.21"
+blake3 = "=1.5.5"
+proc-macro-crate = "=3.2.0"
+zeroize_derive = "=1.4.2"

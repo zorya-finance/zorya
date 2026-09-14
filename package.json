@@ -1,0 +1,30 @@
+{
+  "name": "zorya",
+  "version": "0.1.0",
+  "private": true,
+  "license": "Apache-2.0",
+  "scripts": {
+    "lint": "prettier --check tests",
+    "build:sbf": "bash scripts/build-sbf.sh",
+    "build:sbf:devnet": "bash scripts/build-sbf.sh --no-default-features",
+    "test": "anchor test --skip-build",
+    "desk": "bash scripts/local-desk.sh",
+    "desk:seed": "ANCHOR_PROVIDER_URL=${ANCHOR_PROVIDER_URL:-http://127.0.0.1:8899} ANCHOR_WALLET=${ANCHOR_WALLET:-./.keys/id.json} npx ts-node --transpile-only --compiler-options '{\"esModuleInterop\":true,\"resolveJsonModule\":true}' scripts/seed-local-desk.ts"
+  },
+  "dependencies": {
+    "@coral-xyz/anchor": "^0.31.1",
+    "@solana/spl-token": "^0.4.13",
+    "@solana/web3.js": "^1.98.2"
+  },
+  "devDependencies": {
+    "@types/chai": "^4.3.20",
+    "@types/mocha": "^10.0.10",
+    "@types/node": "^22.15.3",
+    "@coral-xyz/anchor-cli": "0.31.1",
+    "chai": "^4.5.0",
+    "mocha": "^11.1.0",
+    "prettier": "^3.5.3",
+    "ts-mocha": "^10.1.0",
+    "typescript": "^5.8.3"
+  }
+}

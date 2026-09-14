@@ -1,0 +1,16 @@
+.anchor
+.DS_Store
+target
+**/*.rs.bk
+node_modules
+test-ledger
+.yarn
+dist
+.tsbuildinfo
+migrations/deploy.ts
+programs/zorya/target
+.vscode
+.keys
+.tools
+.cargo-sbf
+.cargo-sbf-179
