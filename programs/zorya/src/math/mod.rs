@@ -4,6 +4,9 @@ pub mod oracle;
 pub mod ticks;
 pub mod units;
 
+#[cfg(test)]
+mod fuzz;
+
 pub use health::*;
 pub use liquidation::*;
 pub use oracle::*;

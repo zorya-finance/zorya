@@ -391,6 +391,53 @@ export async function depositCollateral(
   return obligation;
 }
 
+export async function withdrawCollateral(
+  program: Program<Zorya>,
+  fx: MarketFx,
+  owner: Keypair,
+  ownerCollateral: PublicKey,
+  amount: BN,
+): Promise<void> {
+  await program.methods
+    .withdrawCollateral(amount)
+    .accountsPartial({
+      owner: owner.publicKey,
+      config: fx.config,
+      market: fx.market,
+      collateralMint: fx.collateralMint,
+      mockPrice: fx.mockPrice,
+      priceUpdate: fx.mockPrice,
+      ownerCollateral,
+      collateralVault: fx.collateralVault,
+      obligation: pda(program.programId).obligation(fx.market, owner.publicKey),
+      tokenProgram: TOKEN_PROGRAM_ID,
+      systemProgram: SystemProgram.programId,
+    })
+    .signers([owner])
+    .rpc();
+}
+
+export async function repay(
+  program: Program<Zorya>,
+  fx: MarketFx,
+  owner: Keypair,
+  ownerLoan: PublicKey,
+  amount: BN,
+): Promise<void> {
+  await program.methods
+    .repay(amount)
+    .accountsPartial({
+      owner: owner.publicKey,
+      market: fx.market,
+      obligation: pda(program.programId).obligation(fx.market, owner.publicKey),
+      ownerLoan,
+      loanVault: fx.loanVault,
+      tokenProgram: TOKEN_PROGRAM_ID,
+    })
+    .signers([owner])
+    .rpc();
+}
+
 export async function createQuoteIx(
   program: Program<Zorya>,
   fx: MarketFx,
@@ -419,6 +466,28 @@ export async function createQuoteIx(
     .signers([maker])
     .rpc();
   return { quote, quoteVault };
+}
+
+export async function cancelQuote(
+  program: Program<Zorya>,
+  fx: MarketFx,
+  maker: Keypair,
+  makerLoan: PublicKey,
+  quote: PublicKey,
+  quoteVault: PublicKey,
+): Promise<void> {
+  await program.methods
+    .cancelQuote()
+    .accountsPartial({
+      maker: maker.publicKey,
+      market: fx.market,
+      quote,
+      quoteVault,
+      makerLoan,
+      tokenProgram: TOKEN_PROGRAM_ID,
+    })
+    .signers([maker])
+    .rpc();
 }
 
 export async function tokenBalance(

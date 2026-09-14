@@ -98,7 +98,14 @@ Authority can create markets and pause. It cannot change LLTV, maturity, oracle,
 
 ```bash
 npm run build:sbf
+npm run test:fuzz
 npm test
+```
+
+Production binary (no mock oracle), no deploy:
+
+```bash
+npm run test:devnet-binary
 ```
 
 Local desk (three pairs × three dates, mock oracle):

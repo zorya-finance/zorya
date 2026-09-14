@@ -26,3 +26,6 @@ solana-program = "=2.1.21"
 blake3 = "=1.5.5"
 proc-macro-crate = "=3.2.0"
 zeroize_derive = "=1.4.2"
+
+[dev-dependencies]
+proptest = "1.5"

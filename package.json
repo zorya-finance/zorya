@@ -9,7 +9,9 @@
     "build:sbf:devnet": "bash scripts/build-sbf.sh --no-default-features",
     "test": "anchor test --skip-build",
     "desk": "bash scripts/local-desk.sh",
-    "desk:seed": "ANCHOR_PROVIDER_URL=${ANCHOR_PROVIDER_URL:-http://127.0.0.1:8899} ANCHOR_WALLET=${ANCHOR_WALLET:-./.keys/id.json} npx ts-node --transpile-only --compiler-options '{\"esModuleInterop\":true,\"resolveJsonModule\":true}' scripts/seed-local-desk.ts"
+    "desk:seed": "ANCHOR_PROVIDER_URL=${ANCHOR_PROVIDER_URL:-http://127.0.0.1:8899} ANCHOR_WALLET=${ANCHOR_WALLET:-./.keys/id.json} npx ts-node --transpile-only --compiler-options '{\"esModuleInterop\":true,\"resolveJsonModule\":true}' scripts/seed-local-desk.ts",
+    "test:fuzz": "cargo test --manifest-path programs/zorya/Cargo.toml --lib --features mock-oracle fuzz -- --test-threads=4",
+    "test:devnet-binary": "bash scripts/devnet-smoke.sh"
   },
   "dependencies": {
     "@coral-xyz/anchor": "^0.31.1",
