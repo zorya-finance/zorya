@@ -118,6 +118,7 @@ export class ZoryaClient {
 
   async createQuote(args: {
     maker: PublicKey;
+    payer?: PublicKey;
     market: PublicKey;
     loanMint: PublicKey;
     makerLoan: PublicKey;
@@ -131,6 +132,7 @@ export class ZoryaClient {
     await this.program.methods
       .createQuote(args.seq, args.tick, args.units)
       .accountsPartial({
+        payer: args.payer ?? args.maker,
         maker: args.maker,
         config: this.pdas.config(),
         market: args.market,

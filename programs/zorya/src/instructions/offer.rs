@@ -112,7 +112,9 @@ pub fn cancel_quote(ctx: Context<CancelQuote>) -> Result<()> {
 #[derive(Accounts)]
 #[instruction(quote_seq: u64)]
 pub struct CreateQuote<'info> {
+    /// Rent payer. Separate from `maker` so a PDA (product vault) can be the maker.
     #[account(mut)]
+    pub payer: Signer<'info>,
     pub maker: Signer<'info>,
     #[account(seeds = [b"config"], bump = config.bump)]
     pub config: Account<'info, ProtocolConfig>,
@@ -123,7 +125,7 @@ pub struct CreateQuote<'info> {
     pub loan_mint: Account<'info, Mint>,
     #[account(
         init,
-        payer = maker,
+        payer = payer,
         space = 8 + Quote::INIT_SPACE,
         seeds = [
             b"quote",
@@ -136,7 +138,7 @@ pub struct CreateQuote<'info> {
     pub quote: Account<'info, Quote>,
     #[account(
         init,
-        payer = maker,
+        payer = payer,
         token::mint = loan_mint,
         token::authority = quote,
         seeds = [b"quote-vault", quote.key().as_ref()],

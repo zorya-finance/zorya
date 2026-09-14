@@ -453,6 +453,7 @@ export async function createQuoteIx(
   await program.methods
     .createQuote(seq, tick, units)
     .accountsPartial({
+      payer: maker.publicKey,
       maker: maker.publicKey,
       config: fx.config,
       market: fx.market,
