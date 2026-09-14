@@ -118,9 +118,13 @@ npm run desk
 Devnet (fake mints, no real TVL):
 
 ```bash
-npm run build:sbf:devnet
-bash scripts/devnet-deploy.sh
+# throwaway wallet needs ~8 SOL on devnet (program rent ~3.81 × 2 during deploy)
+npm run devnet:deploy    # no-mock binary, refuses mainnet, does not touch solana config
+PYTH_API_KEY=… npm run devnet:smoke   # Hermes Bearer token + wSOL / JitoSOL / cbBTC Pyth pull
+npm run build:sbf        # restore the localnet mock binary afterwards
 ```
+
+Three isolated markets, one tenor (`2026-12-31`, inside the 30–180 day production window). Fake USDC, fake wSOL (SOL/USD), fake JitoSOL (JITOSOL/USD), fake cbBTC (BTC/USD — Hermes trial does not grant `Crypto.CBBTC/USD`). Addresses land in gitignored `.devnet-desk.json`.
 
 TypeScript client: [`sdk/`](sdk/). `findPdas` is how you derive addresses. `SOL_USD_FEED_ID` and `PYTH_RECEIVER` live in `sdk/src/pyth.ts`.
 

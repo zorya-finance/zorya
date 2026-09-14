@@ -5,6 +5,7 @@ target
 node_modules
 test-ledger
 .yarn
+.devnet-desk.json
 dist
 .tsbuildinfo
 migrations/deploy.ts

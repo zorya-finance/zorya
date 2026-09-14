@@ -9,6 +9,9 @@ const client = new ZoryaClient(program);
 await client.depositCollateral({ ... });
 await client.fillQuote({ ... });
 await client.repay({ ... });
+await client.withdrawCollateral({ ... });
+await client.redeem({ ... });
+await client.liquidate({ path: "health", ... });
 ```
 
 On a Pyth market, pass the posted `PriceUpdateV2` as `priceUpdate` on `fillQuote` (and the matching withdraw / liquidate accounts). Mock markets can omit it — the client defaults to the mock-price PDA.

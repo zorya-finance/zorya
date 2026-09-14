@@ -108,5 +108,20 @@ describe("sdk", () => {
       client.pdas.claim(keys.market, lender.user.publicKey),
     );
     expect(claim.creditUnits.toString()).to.equal(units.toString());
+
+    await client.withdrawCollateral({
+      owner: borrower.user.publicKey,
+      market: keys.market,
+      collateralMint,
+      ownerCollateral: borrower.collateralAta,
+      collateralVault: keys.collateralVault,
+      mockPrice: keys.mockPrice,
+      amount: new BN(10_000_000_000),
+      signers: [borrower.user],
+    });
+    const afterWithdraw = await program.account.obligationPosition.fetch(
+      client.pdas.obligation(keys.market, borrower.user.publicKey),
+    );
+    expect(afterWithdraw.collateralAmount.toNumber()).to.equal(0);
   });
 });

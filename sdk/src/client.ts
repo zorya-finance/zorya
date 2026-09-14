@@ -250,4 +250,68 @@ export class ZoryaClient {
       .signers(args.signers ?? [])
       .rpc();
   }
+
+  async withdrawCollateral(args: {
+    owner: PublicKey;
+    market: PublicKey;
+    collateralMint: PublicKey;
+    ownerCollateral: PublicKey;
+    collateralVault: PublicKey;
+    mockPrice: PublicKey;
+    priceUpdate?: PublicKey;
+    amount: BN;
+    signers?: Signer[];
+  }): Promise<void> {
+    await this.program.methods
+      .withdrawCollateral(args.amount)
+      .accountsPartial({
+        owner: args.owner,
+        config: this.pdas.config(),
+        market: args.market,
+        collateralMint: args.collateralMint,
+        mockPrice: args.mockPrice,
+        priceUpdate: args.priceUpdate ?? args.mockPrice,
+        ownerCollateral: args.ownerCollateral,
+        collateralVault: args.collateralVault,
+        obligation: this.pdas.obligation(args.market, args.owner),
+        tokenProgram: TOKEN_PROGRAM_ID,
+        systemProgram: SystemProgram.programId,
+      })
+      .signers(args.signers ?? [])
+      .rpc();
+  }
+
+  async liquidate(args: {
+    path: "health" | "default";
+    liquidator: PublicKey;
+    borrower: PublicKey;
+    market: PublicKey;
+    mockPrice: PublicKey;
+    priceUpdate?: PublicKey;
+    liquidatorLoan: PublicKey;
+    liquidatorCollateral: PublicKey;
+    loanVault: PublicKey;
+    collateralVault: PublicKey;
+    repaid: BN;
+    signers?: Signer[];
+  }): Promise<void> {
+    const accounts = {
+      liquidator: args.liquidator,
+      borrower: args.borrower,
+      market: args.market,
+      obligation: this.pdas.obligation(args.market, args.borrower),
+      mockPrice: args.mockPrice,
+      priceUpdate: args.priceUpdate ?? args.mockPrice,
+      liquidatorLoan: args.liquidatorLoan,
+      liquidatorCollateral: args.liquidatorCollateral,
+      loanVault: args.loanVault,
+      collateralVault: args.collateralVault,
+      tokenProgram: TOKEN_PROGRAM_ID,
+    };
+    const ix =
+      args.path === "health"
+        ? this.program.methods.liquidateHealth(args.repaid)
+        : this.program.methods.liquidateDefault(args.repaid);
+    await ix.accountsPartial(accounts).signers(args.signers ?? []).rpc();
+  }
 }

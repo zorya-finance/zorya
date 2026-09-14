@@ -14,7 +14,14 @@ export {
 } from "./curve";
 export { findPdas } from "./pda";
 export {
+  BTC_USD_FEED_HEX,
+  BTC_USD_FEED_ID,
+  CBBTC_USD_FEED_HEX,
+  CBBTC_USD_FEED_ID,
+  JITOSOL_USD_FEED_HEX,
+  JITOSOL_USD_FEED_ID,
   PYTH_RECEIVER,
   SOL_USD_FEED_HEX,
   SOL_USD_FEED_ID,
+  feedIdFromHex,
 } from "./pyth";
