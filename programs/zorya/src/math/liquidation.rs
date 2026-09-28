@@ -155,6 +155,41 @@ mod tests {
     use crate::state::market::DEFAULT_LIQ_CURSOR_BPS;
 
     #[test]
+    fn seizure_crosses_old_u128_overflow_boundary_exactly() {
+        let lif = max_lif_wad(7_000, 3_000).unwrap();
+        for (repaid, expected) in [
+            (309_656_953_898, 2_268_549_112_805),
+            (309_656_953_899, 2_268_549_112_813),
+            (346_666_666_667, 2_539_682_539_684),
+        ] {
+            assert_eq!(seized_collateral_atoms(repaid, lif, 150_000_000, 9).unwrap(), expected);
+        }
+    }
+
+    #[test]
+    fn large_health_position_has_a_finite_cap() {
+        assert_eq!(health_repay_cap(500_000_000_000, 4_000_000_000_000, 9,
+            150_000_000, 0, 7_000, 3_000, 1_000_000).unwrap(), 346_666_666_667);
+    }
+
+    #[test]
+    fn seizure_preserves_fractional_loan_atoms_until_final_floor() {
+        // Dividing by WAD first would discard the bonus on one loan atom.
+        assert_eq!(seized_collateral_atoms(1, WAD + WAD / 10, 1, 9).unwrap(), 1_100_000_000);
+        assert_eq!(seized_collateral_atoms(1, WAD, 19, 19).unwrap(), 526_315_789_473_684_210);
+        assert_eq!(seized_collateral_atoms(1, 1, 10_000_000_000_000_000_000, 38).unwrap(), 10);
+        assert_eq!(seized_collateral_atoms(u64::MAX, u64::MAX, u64::MAX, 18).unwrap(), u64::MAX);
+    }
+
+    #[test]
+    fn seizure_rejects_invalid_price_scale_and_unrepresentable_result() {
+        assert!(seized_collateral_atoms(1, WAD, 0, 9).is_err());
+        assert!(seized_collateral_atoms(1, WAD, 1, 39).is_err());
+        assert!(seized_collateral_atoms(u64::MAX, WAD, 1, 19).is_err());
+        assert_eq!(seized_collateral_atoms(0, WAD, 1, 38).unwrap(), 0);
+    }
+
+    #[test]
     fn max_lif_mvp_params() {
         let lif = max_lif_wad(7_000, DEFAULT_LIQ_CURSOR_BPS).unwrap();
         // 1 / 0.91 ≈ 1.098901098901098901
