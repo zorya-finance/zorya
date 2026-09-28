@@ -20,3 +20,23 @@ wallet = ".keys/id.json"
 
 [scripts]
 test = "npx ts-mocha -p ./tsconfig.json -t 1000000 tests/**/*.ts"
+
+# Synthetic settled/cash-short state for the Q18 redemption regression.
+[test.validator]
+bind_address = "127.0.0.1"
+
+[[test.validator.account]]
+address = "4Y372saXHYoL9bsTzgD7vuhDfojvj2juM2KXGkMzx6W4"
+filename = "tests/fixtures/settled-cash-short/4Y372saXHYoL9bsTzgD7vuhDfojvj2juM2KXGkMzx6W4.json"
+
+[[test.validator.account]]
+address = "7rrjAVA6dLDJtF49C9fpJkJgUq7Tfhqui58UzjpeDFuZ"
+filename = "tests/fixtures/settled-cash-short/7rrjAVA6dLDJtF49C9fpJkJgUq7Tfhqui58UzjpeDFuZ.json"
+
+[[test.validator.account]]
+address = "2fUoSyswJ5a9f1NMEoNyn2SKC33iRTNN27RwC9mJhRgw"
+filename = "tests/fixtures/settled-cash-short/2fUoSyswJ5a9f1NMEoNyn2SKC33iRTNN27RwC9mJhRgw.json"
+
+[[test.validator.account]]
+address = "4ahfaxgYLok1PoFu7qHhRPuRwR9fhNPTcdKn69Nkbf6U"
+filename = "tests/fixtures/settled-cash-short/4ahfaxgYLok1PoFu7qHhRPuRwR9fhNPTcdKn69Nkbf6U.json"

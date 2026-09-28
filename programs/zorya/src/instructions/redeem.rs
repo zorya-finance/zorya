@@ -14,6 +14,10 @@ pub fn redeem(ctx: Context<Redeem>, units: u64) -> Result<()> {
         ZoryaError::MarketNotMatured
     );
     require!(
+        ctx.accounts.market.total_debt_units == 0,
+        ZoryaError::OpenDebt
+    );
+    require!(
         ctx.accounts.claim.credit_units >= units,
         ZoryaError::InsufficientCredit
     );

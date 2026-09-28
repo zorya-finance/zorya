@@ -74,4 +74,6 @@ pub enum ZoryaError {
     OracleOwnerMismatch,
     #[msg("Pyth price update is not fully verified")]
     OracleNotFullyVerified,
+    #[msg("Market still has unpaid debt; liquidate defaults before redeem")]
+    OpenDebt,
 }

@@ -47,7 +47,10 @@ describe("redeem", () => {
       await redeem(program, fx, lender.user, lender.loanAta, units);
       expect.fail("early redeem should fail");
     } catch (err) {
-      expect(String(err)).to.match(/MarketNotMatured|custom program error/i);
+      expect(err).to.be.instanceOf(anchor.AnchorError);
+      expect((err as anchor.AnchorError).error.errorCode.code).to.equal(
+        "MarketNotMatured",
+      );
     }
   });
 
@@ -77,22 +80,38 @@ describe("redeem", () => {
     );
   });
 
-  it("redeems partially when the vault is short", async () => {
+  it("rejects redeem after a partial repayment leaves debt outstanding", async () => {
     const { fx, units, lender, borrower, obligation } = await openFilledMarket(
       program,
       { maturity: nowPlusSecs(50) },
     );
     await repayUnits(fx, borrower, obligation, new BN(40_000_000));
     await waitUntilUnix(provider.connection, fx.maturity.toNumber());
-    await redeem(program, fx, lender.user, lender.loanAta, units);
+    let caught: unknown;
+    try {
+      await redeem(program, fx, lender.user, lender.loanAta, units);
+    } catch (error) {
+      caught = error;
+    }
+    expect(caught).to.be.instanceOf(anchor.AnchorError);
+    expect((caught as anchor.AnchorError).error.errorCode.code).to.equal(
+      "OpenDebt",
+    );
     const claim = await program.account.claimPosition.fetch(
       pda(program.programId).claim(fx.market, lender.user.publicKey),
     );
-    expect(claim.creditUnits.toString()).to.equal("60000000");
-    expect(await tokenBalance(provider.connection, fx.loanVault)).to.equal(0n);
+    expect(claim.creditUnits.toString()).to.equal("100000000");
+    expect(
+      (
+        await program.account.termMarket.fetch(fx.market)
+      ).totalDebtUnits.toString(),
+    ).to.equal("60000000");
+    expect(await tokenBalance(provider.connection, fx.loanVault)).to.equal(
+      40_000_000n,
+    );
   });
 
-  it("rejects redeem when the vault is empty", async () => {
+  it("rejects open debt even when the vault is empty", async () => {
     const { fx, units, lender } = await openFilledMarket(program, {
       maturity: nowPlusSecs(50),
     });
@@ -101,7 +120,10 @@ describe("redeem", () => {
       await redeem(program, fx, lender.user, lender.loanAta, units);
       expect.fail("empty vault should fail");
     } catch (err) {
-      expect(String(err)).to.match(/InsufficientVault|custom program error/i);
+      expect(err).to.be.instanceOf(anchor.AnchorError);
+      expect((err as anchor.AnchorError).error.errorCode.code).to.equal(
+        "OpenDebt",
+      );
     }
   });
 
@@ -174,19 +196,22 @@ describe("redeem", () => {
     expect(received > 0n).to.equal(true);
   });
 
-  it("does not reduce the borrower obligation", async () => {
+  it("preserves the settled borrower obligation", async () => {
     const { fx, units, lender, borrower, obligation } = await openFilledMarket(
       program,
       { maturity: nowPlusSecs(50) },
     );
-    await repayUnits(fx, borrower, obligation, new BN(50_000_000));
+    await repayUnits(fx, borrower, obligation, units);
     await waitUntilUnix(provider.connection, fx.maturity.toNumber());
     const debtBefore = (
       await program.account.obligationPosition.fetch(obligation)
     ).debtUnits;
+    expect(debtBefore.toString()).to.equal("0");
     await redeem(program, fx, lender.user, lender.loanAta, units);
     expect(
-      (await program.account.obligationPosition.fetch(obligation)).debtUnits.toString(),
+      (
+        await program.account.obligationPosition.fetch(obligation)
+      ).debtUnits.toString(),
     ).to.equal(debtBefore.toString());
   });
 });
