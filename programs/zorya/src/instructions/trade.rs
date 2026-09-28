@@ -25,6 +25,10 @@ pub fn fill_quote(ctx: Context<FillQuote>, max_units: u64) -> Result<()> {
     );
     require!(max_units > 0, ZoryaError::ZeroAmount);
     require!(
+        ctx.accounts.market.loss_factor_wad == 0,
+        ZoryaError::MarketImpaired
+    );
+    require!(
         ctx.accounts.taker.key() != ctx.accounts.quote.maker,
         ZoryaError::SelfTrade
     );

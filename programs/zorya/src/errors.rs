@@ -76,4 +76,6 @@ pub enum ZoryaError {
     OracleNotFullyVerified,
     #[msg("Market still has unpaid debt; liquidate defaults before redeem")]
     OpenDebt,
+    #[msg("Market has a recorded loss; new quotes and fills are closed")]
+    MarketImpaired,
 }

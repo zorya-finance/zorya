@@ -18,10 +18,7 @@ pub fn max_lif_wad(lltv_bps: u16, cursor_bps: u16) -> Result<u64> {
     let gap = WAD_U128
         .checked_sub(lltv_wad)
         .ok_or(ZoryaError::MathOverflow)?;
-    let haircut = gamma_wad
-        .checked_mul(gap)
-        .ok_or(ZoryaError::MathOverflow)?
-        / WAD_U128;
+    let haircut = gamma_wad.checked_mul(gap).ok_or(ZoryaError::MathOverflow)? / WAD_U128;
     let denom = WAD_U128
         .checked_sub(haircut)
         .ok_or(ZoryaError::MathOverflow)?;
@@ -43,11 +40,7 @@ pub fn default_lif_wad(now: i64, maturity_ts: i64, max_lif: u64) -> Result<u64> 
     let bonus = (max_lif as u128)
         .checked_sub(WAD_U128)
         .ok_or(ZoryaError::MathOverflow)?;
-    let lif = WAD_U128
-        + bonus
-            .checked_mul(ramp)
-            .ok_or(ZoryaError::MathOverflow)?
-            / WAD_U128;
+    let lif = WAD_U128 + bonus.checked_mul(ramp).ok_or(ZoryaError::MathOverflow)? / WAD_U128;
     u64::try_from(lif).map_err(|_| error!(ZoryaError::MathOverflow))
 }
 
@@ -62,15 +55,29 @@ pub fn seized_collateral_atoms(
     let scale = 10u128
         .checked_pow(collateral_decimals as u32)
         .ok_or(ZoryaError::MathOverflow)?;
-    let num = (repaid as u128)
-        .checked_mul(lif_wad as u128)
-        .ok_or(ZoryaError::MathOverflow)?
-        .checked_mul(scale)
-        .ok_or(ZoryaError::MathOverflow)?;
-    let den = WAD_U128
-        .checked_mul(price_e6 as u128)
-        .ok_or(ZoryaError::MathOverflow)?;
-    u64::try_from(num / den).map_err(|_| error!(ZoryaError::MathOverflow))
+    // A product of two u64 values fits u128. Cancel powers of ten before
+    // multiplying, preserving the single final floor (including bonus atoms).
+    let num = (repaid as u128) * (lif_wad as u128);
+    let price = price_e6 as u128;
+    let seized = if scale <= WAD_U128 {
+        let den = (WAD_U128 / scale) * price;
+        num / den
+    } else {
+        // For >18 decimals, retain the remainder at each decimal step. This
+        // computes floor(num * 10^(decimals-18) / price) exactly without
+        // constructing that potentially overflowing numerator.
+        let mut quotient = num / price;
+        let mut remainder = num % price;
+        for _ in 18..collateral_decimals {
+            quotient = quotient
+                .checked_mul(10)
+                .and_then(|q| q.checked_add(remainder * 10 / price))
+                .ok_or(ZoryaError::MathOverflow)?;
+            remainder = remainder * 10 % price;
+        }
+        quotient
+    };
+    u64::try_from(seized).map_err(|_| error!(ZoryaError::MathOverflow))
 }
 
 /// 0.01 whole collateral tokens, in atoms.
@@ -103,9 +110,7 @@ pub fn health_repay_cap(
         .checked_mul(lltv_wad)
         .ok_or(ZoryaError::MathOverflow)?
         / WAD_U128;
-    let denom_wad = WAD_U128
-        .checked_sub(prod)
-        .ok_or(ZoryaError::MathOverflow)?;
+    let denom_wad = WAD_U128.checked_sub(prod).ok_or(ZoryaError::MathOverflow)?;
 
     let r_rcf = if denom_wad == 0 {
         debt
@@ -162,23 +167,50 @@ mod tests {
             (309_656_953_899, 2_268_549_112_813),
             (346_666_666_667, 2_539_682_539_684),
         ] {
-            assert_eq!(seized_collateral_atoms(repaid, lif, 150_000_000, 9).unwrap(), expected);
+            assert_eq!(
+                seized_collateral_atoms(repaid, lif, 150_000_000, 9).unwrap(),
+                expected
+            );
         }
     }
 
     #[test]
     fn large_health_position_has_a_finite_cap() {
-        assert_eq!(health_repay_cap(500_000_000_000, 4_000_000_000_000, 9,
-            150_000_000, 0, 7_000, 3_000, 1_000_000).unwrap(), 346_666_666_667);
+        assert_eq!(
+            health_repay_cap(
+                500_000_000_000,
+                4_000_000_000_000,
+                9,
+                150_000_000,
+                0,
+                7_000,
+                3_000,
+                1_000_000
+            )
+            .unwrap(),
+            346_666_666_667
+        );
     }
 
     #[test]
     fn seizure_preserves_fractional_loan_atoms_until_final_floor() {
         // Dividing by WAD first would discard the bonus on one loan atom.
-        assert_eq!(seized_collateral_atoms(1, WAD + WAD / 10, 1, 9).unwrap(), 1_100_000_000);
-        assert_eq!(seized_collateral_atoms(1, WAD, 19, 19).unwrap(), 526_315_789_473_684_210);
-        assert_eq!(seized_collateral_atoms(1, 1, 10_000_000_000_000_000_000, 38).unwrap(), 10);
-        assert_eq!(seized_collateral_atoms(u64::MAX, u64::MAX, u64::MAX, 18).unwrap(), u64::MAX);
+        assert_eq!(
+            seized_collateral_atoms(1, WAD + WAD / 10, 1, 9).unwrap(),
+            1_100_000_000
+        );
+        assert_eq!(
+            seized_collateral_atoms(1, WAD, 19, 19).unwrap(),
+            526_315_789_473_684_210
+        );
+        assert_eq!(
+            seized_collateral_atoms(1, 1, 10_000_000_000_000_000_000, 38).unwrap(),
+            10
+        );
+        assert_eq!(
+            seized_collateral_atoms(u64::MAX, u64::MAX, u64::MAX, 18).unwrap(),
+            u64::MAX
+        );
     }
 
     #[test]
@@ -187,6 +219,27 @@ mod tests {
         assert!(seized_collateral_atoms(1, WAD, 1, 39).is_err());
         assert!(seized_collateral_atoms(u64::MAX, WAD, 1, 19).is_err());
         assert_eq!(seized_collateral_atoms(0, WAD, 1, 38).unwrap(), 0);
+    }
+
+    #[test]
+    fn seizure_matches_wide_integer_vectors() {
+        // Oracle values were generated with unbounded JavaScript BigInt using
+        // the original rational formula, not the reduced implementation.
+        let vectors = include_str!("../../../../tests/fixtures/liquidation-seizure.csv");
+        for row in vectors.lines().filter(|line| !line.starts_with('#')) {
+            let fields: Vec<_> = row.split(',').collect();
+            let actual = seized_collateral_atoms(
+                fields[0].parse().unwrap(),
+                fields[1].parse().unwrap(),
+                fields[2].parse().unwrap(),
+                fields[3].parse().unwrap(),
+            );
+            if fields[4] == "overflow" {
+                assert!(actual.is_err(), "{row}");
+            } else {
+                assert_eq!(actual.unwrap(), fields[4].parse::<u64>().unwrap(), "{row}");
+            }
+        }
     }
 
     #[test]
