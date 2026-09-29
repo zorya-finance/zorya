@@ -156,6 +156,28 @@ await client.fillQuote({ ... });
 
 Do not send an APR or a liquidation price on those calls.
 
+## Issuance after a recorded loss
+
+Once `loss_factor_wad` becomes positive, `create_quote` and `fill_quote`
+reject with `MarketImpaired`. This includes fills of quotes posted before
+the loss, partial fills and PDA makers. New claims cannot inherit a loss
+factor calculated for an earlier credit base. Cancel existing quotes to
+recover their escrow; cancellation, repayment, collateral management and
+liquidation keep their existing checks. Redemption still requires maturity
+and zero market debt.
+
+This is containment for future issuance. It does not recalculate historical
+loss factors, repair claims already issued after a loss on an older binary,
+or sweep rounding dust. Such states need a separately reviewed settlement
+policy. Account layouts and instruction arguments are unchanged; regenerate
+the IDL to include the appended `MarketImpaired` error.
+
+Liquidation seizure cancels decimal factors before multiplication and keeps
+the remainder for scales above 18 decimals. It preserves the exact final
+floor while avoiding a large intermediate product. A one-USDC health
+liquidation no longer fails merely because the recovery cap for a larger
+position exceeds the previous intermediate-overflow threshold.
+
 ## License
 
 Apache-2.0.

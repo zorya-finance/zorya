@@ -26,6 +26,10 @@ pub fn create_quote(ctx: Context<CreateQuote>, quote_seq: u64, tick: i32, units:
     );
 
     let price = tick_to_price_wad(tick, ctx.accounts.market.tick_delta_bps)?;
+    require!(
+        ctx.accounts.market.loss_factor_wad == 0,
+        ZoryaError::MarketImpaired
+    );
     let escrow = ceil_mul_wad(units, price)?;
     require!(escrow > 0, ZoryaError::ZeroAmount);
 
