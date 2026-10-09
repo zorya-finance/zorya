@@ -67,7 +67,7 @@ Core fees are 0.
 
 ### Oracle
 
-`create_market` with a zero feed id makes a **mock** market (localnet). A live Pyth market stores the SOL/USD feed id and the Pyth Receiver. Fill, withdraw, and liquidate take a `PriceUpdateV2` in the same transaction. The program checks owner, discriminator, `VerificationLevel::Full`, feed id, 30s age, sign, and 2% confidence.
+`create_market` with a zero feed id makes a **mock** market (localnet). A live Pyth market stores the SOL/USD feed id and the Pyth Receiver. Fill, withdraw, and liquidate take a `PriceUpdateV2` in the same transaction. The program checks owner, discriminator, `VerificationLevel::Full`, feed id, 120s age (covers sponsored push heartbeats of ~55s), sign, and 2% confidence. Hermes pull may still post a fresher update; clients can also read the sponsored push account directly.
 
 `repay`, `redeem`, and `cancel_quote` do not read the oracle.
 

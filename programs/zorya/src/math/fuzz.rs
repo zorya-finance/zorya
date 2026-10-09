@@ -125,7 +125,7 @@ proptest! {
 
     #[test]
     fn pyth_stale_and_feed_mismatch_revert(
-        age in 31i64..=10_000,
+        age in 121i64..=10_000,
         publish in 1i64..=1_000_000,
     ) {
         let feed = [7u8; 32];

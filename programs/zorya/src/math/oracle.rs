@@ -3,8 +3,9 @@ use crate::state::market::{ORACLE_KIND_MOCK, ORACLE_KIND_PYTH, TermMarket};
 use crate::state::oracle::MockPrice;
 use anchor_lang::prelude::*;
 
-/// Q8 SAFE DEFAULT.
-pub const PYTH_MAX_AGE_SECS: i64 = 30;
+/// Sponsored Pyth push feeds refresh on a ~55s heartbeat (or 0.5% move).
+/// 120s covers that cadence; Hermes pull can still post fresher updates.
+pub const PYTH_MAX_AGE_SECS: i64 = 120;
 
 /// Pyth Solana Receiver — same program id on mainnet and devnet.
 pub const PYTH_RECEIVER: Pubkey = pubkey!("rec5EKMGg6MxZYaMdyBfgwp4d5rB9T1VQH5pJv5LtFJ");
@@ -221,7 +222,7 @@ mod tests {
     fn rejects_stale_and_future() {
         let now = 1_000_000i64;
         assert!(validate_pyth_quote(
-            20_000_000_000, 0, -8, now - 31, now, &SOL_USD, &SOL_USD, 6
+            20_000_000_000, 0, -8, now - 121, now, &SOL_USD, &SOL_USD, 6
         )
         .is_err());
         assert!(validate_pyth_quote(
@@ -229,7 +230,12 @@ mod tests {
         )
         .is_err());
         assert!(validate_pyth_quote(
-            20_000_000_000, 0, -8, now - 30, now, &SOL_USD, &SOL_USD, 6
+            20_000_000_000, 0, -8, now - 120, now, &SOL_USD, &SOL_USD, 6
+        )
+        .is_ok());
+        // Ages that used to fail under the 30s window remain valid for push.
+        assert!(validate_pyth_quote(
+            20_000_000_000, 0, -8, now - 31, now, &SOL_USD, &SOL_USD, 6
         )
         .is_ok());
     }
